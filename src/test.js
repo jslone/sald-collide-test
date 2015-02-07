@@ -3,8 +3,12 @@ var collide = require('sald:collide.js');
 
 var mode = 0;
 
+var ray2;
+var ctx = sald.ctx;
+var time = 0;
+
 function draw() {
-	var ctx = sald.ctx;
+	ctx = sald.ctx;
 	var mouse = sald.mouse;
 
 	ctx.setTransform(1,0, 0,1, 0,0);
@@ -64,9 +68,9 @@ function draw() {
 	//Geometry to test against:
 
 	var circle2 = { x:ctx.factor * 0.24, y: ctx.factor * 0.271, r:ctx.factor * 0.09 };
-	var ray2 = {
-		start:{x:ctx.factor * 0.7, y:ctx.factor * 0.1},
-		end:{x:ctx.factor * 0.4, y:ctx.factor * 0.5} };
+	// ray2 = {
+	// 	start:{x:ctx.factor * 0.4, y:ctx.factor * 0.5},
+	// 	end:{x:ctx.factor * 0.7, y:ctx.factor * 0.1} };
 	var rect2 = {
 		min:{x:ctx.factor * 0.1, y:ctx.factor * 0.62},
 		max:{x:ctx.factor * 0.301, y:ctx.factor * 0.81}
@@ -237,7 +241,17 @@ function draw() {
 	}
 }
 
+function rotateRay(){
+	if (ctx != null){
+		ray2 = {
+		start:{x:ctx.factor * 0.5, y:ctx.factor * 0.5},
+		end:{x:(ctx.factor * 0.5) + (140*Math.cos(time)), y:(ctx.factor * 0.5) + (140*Math.sin(time))} };
+	}
+}
+
 function update(elapsed) {
+	time += elapsed;
+	rotateRay();
 }
 
 function key(code, down) {
