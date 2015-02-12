@@ -10,7 +10,7 @@ var collide = new function() {
 			}.bind(null,Array.prototype.slice.call(arguments,2));
 
 			if(doBenchmark) {
-				var res = benchmark(wrapper,{timeout: 100});
+				var res = benchmark(wrapper,{iterations: 100000});
 				console.log(name + ': ' + JSON.stringify(res));
 			}
 			return wrapper();
