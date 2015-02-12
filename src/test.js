@@ -1,11 +1,30 @@
+var benchmark = require('sald:benchmark.js');
 
-var collide = require('sald:collide.js');
+// wrap the collision detection library in a benchmarker
+var collide = new function() {
+	var col = require('sald:collide.js');
+	for(var funName in col) {
+		this[funName] = function(name,f) {
+			var wrapper = function(args) {
+				return f.apply(null,args);
+			}.bind(null,Array.prototype.slice.call(arguments,2));
+
+			if(doBenchmark) {
+				var res = benchmark(wrapper,{timeout: 100});
+				console.log(name + ': ' + JSON.stringify(res));
+			}
+			return wrapper();
+		}.bind(null, funName, col[funName]);
+	}
+}
 
 var mode = 0;
 
 var ray2;
 var ctx = sald.ctx;
 var time = 0;
+
+var doBenchmark = false;
 
 function draw() {
 	ctx = sald.ctx;
@@ -87,157 +106,159 @@ function draw() {
 		c.y = (c.y + 0.7) * ctx.factor;
 	});
 
-	if (mode === 0) {
-		var circle = {
-			x:mouse.x,
-			y:mouse.y,
-			r:ctx.factor * 0.1
-		};
-		ctx.beginPath();
-		ctx.arc(circle.x, circle.y, circle.r, 0, 2.0 * Math.PI);
-		ctx.strokeStyle = '#000';
-		ctx.stroke();
-
-		// - - - - - - - - - -
-
-		ctx.beginPath();
-		ctx.arc(circle2.x, circle2.y, circle2.r, 0, 2.0 * Math.PI);
-		if (collide.circleCircle(circle, circle2)) {
-			ctx.strokeStyle = '#fff';
-		} else {
-			ctx.strokeStyle = '#555';
-		}
-		ctx.stroke();
-
-		// - - - - - - - - - -
-
-		ctx.beginPath();
-		arrowLines(ray2.start, ray2.end);
-		var col = collide.rayCircle(ray2, circle);
-		if (col) {
-			ctx.strokeStyle = '#fff';
-			ctx.stroke();
-
-			//show the intersection point:
-			ctx.beginPath();
-			var at = {
-				x:col.t * (ray2.end.x - ray2.start.x) + ray2.start.x,
-				y:col.t * (ray2.end.y - ray2.start.y) + ray2.start.y
+	switch (mode) {
+		case 0:
+			var circle = {
+				x:mouse.x,
+				y:mouse.y,
+				r:ctx.factor * 0.1
 			};
-			ctx.moveTo(at.x - 4.0, at.y - 4.0);
-			ctx.lineTo(at.x + 4.0, at.y + 4.0);
-			ctx.moveTo(at.x - 4.0, at.y + 4.0);
-			ctx.lineTo(at.x + 4.0, at.y - 4.0);
-			ctx.strokeStyle = '#f00';
-			ctx.stroke();
-		} else {
-			ctx.strokeStyle = '#555';
-			ctx.stroke();
-		}
-
-		// - - - - - - - - - -
-	} else if (mode === 1) {
-		var rect = {
-			min:{x: mouse.x - ctx.factor * 0.1, y: mouse.y - ctx.factor * 0.08},
-			max:{x: mouse.x + ctx.factor * 0.1, y: mouse.y + ctx.factor * 0.08}
-		};
-
-		ctx.beginPath();
-		rectLines(rect.min, rect.max);
-		ctx.strokeStyle = '#000';
-		ctx.stroke();
-
-		// - - - - - - - - - -
-
-		ctx.beginPath();
-		rectLines(rect2.min, rect2.max);
-		if (collide.rectangleRectangle(rect, rect2)) {
-			ctx.strokeStyle = '#fff';
-		} else {
-			ctx.strokeStyle = '#555';
-		}
-		ctx.stroke();
-
-		// - - - - - - - - - -
-
-		ctx.beginPath();
-		arrowLines(ray2.start, ray2.end);
-		var col = collide.rayRectangle(ray2, rect);
-		if (col) {
-			ctx.strokeStyle = '#fff';
-			ctx.stroke();
-
-			//show the intersection point:
 			ctx.beginPath();
-			var at = {
-				x:col.t * (ray2.end.x - ray2.start.x) + ray2.start.x,
-				y:col.t * (ray2.end.y - ray2.start.y) + ray2.start.y
-			};
-			ctx.moveTo(at.x - 4.0, at.y - 4.0);
-			ctx.lineTo(at.x + 4.0, at.y + 4.0);
-			ctx.moveTo(at.x - 4.0, at.y + 4.0);
-			ctx.lineTo(at.x + 4.0, at.y - 4.0);
-			ctx.strokeStyle = '#f00';
-			ctx.stroke();
-		} else {
-			ctx.strokeStyle = '#555';
-			ctx.stroke();
-		}
-	} else if (mode === 2) {
-
-		var convex = [
-			{x:-0.08, y:-0.07},
-			{x: 0.07, y:-0.06},
-			{x: 0.09, y: 0.08},
-			{x:-0.07, y: 0.09},
-		];
-		convex.forEach(function(c){
-			c.x = (c.x * ctx.factor + mouse.x);
-			c.y = (c.y * ctx.factor + mouse.y);
-		});
-
-		ctx.beginPath();
-		convexLines(convex);
-		ctx.strokeStyle = '#000';
-		ctx.stroke();
-
-		// - - - - - - - - - -
-
-		ctx.beginPath();
-		convexLines(convex2);
-		if (collide.convexConvex(convex, convex2)) {
-			ctx.strokeStyle = '#fff';
-		} else {
-			ctx.strokeStyle = '#555';
-		}
-		ctx.stroke();
-
-		// - - - - - - - - - -
-
-		ctx.beginPath();
-		arrowLines(ray2.start, ray2.end);
-		var col = collide.rayConvex(ray2, convex);
-		if (col) {
-			ctx.strokeStyle = '#fff';
+			ctx.arc(circle.x, circle.y, circle.r, 0, 2.0 * Math.PI);
+			ctx.strokeStyle = '#000';
 			ctx.stroke();
 
-			//show the intersection point:
+			// - - - - - - - - - -
+
 			ctx.beginPath();
-			var at = {
-				x:col.t * (ray2.end.x - ray2.start.x) + ray2.start.x,
-				y:col.t * (ray2.end.y - ray2.start.y) + ray2.start.y
-			};
-			ctx.moveTo(at.x - 4.0, at.y - 4.0);
-			ctx.lineTo(at.x + 4.0, at.y + 4.0);
-			ctx.moveTo(at.x - 4.0, at.y + 4.0);
-			ctx.lineTo(at.x + 4.0, at.y - 4.0);
-			ctx.strokeStyle = '#f00';
+			ctx.arc(circle2.x, circle2.y, circle2.r, 0, 2.0 * Math.PI);
+			if (collide.circleCircle(circle, circle2)) {
+				ctx.strokeStyle = '#fff';
+			} else {
+				ctx.strokeStyle = '#555';
+			}
 			ctx.stroke();
-		} else {
-			ctx.strokeStyle = '#555';
-			ctx.stroke();
-		}
 
+			// - - - - - - - - - -
+
+			ctx.beginPath();
+			arrowLines(ray2.start, ray2.end);
+			var col = collide.rayCircle(ray2, circle);
+			if (col) {
+				ctx.strokeStyle = '#fff';
+				ctx.stroke();
+
+				//show the intersection point:
+				ctx.beginPath();
+				var at = {
+					x:col.t * (ray2.end.x - ray2.start.x) + ray2.start.x,
+					y:col.t * (ray2.end.y - ray2.start.y) + ray2.start.y
+				};
+				ctx.moveTo(at.x - 4.0, at.y - 4.0);
+				ctx.lineTo(at.x + 4.0, at.y + 4.0);
+				ctx.moveTo(at.x - 4.0, at.y + 4.0);
+				ctx.lineTo(at.x + 4.0, at.y - 4.0);
+				ctx.strokeStyle = '#f00';
+				ctx.stroke();
+			} else {
+				ctx.strokeStyle = '#555';
+				ctx.stroke();
+			}
+			break;
+		case 1:
+			// - - - - - - - - - -
+			var rect = {
+				min:{x: mouse.x - ctx.factor * 0.1, y: mouse.y - ctx.factor * 0.08},
+				max:{x: mouse.x + ctx.factor * 0.1, y: mouse.y + ctx.factor * 0.08}
+			};
+
+			ctx.beginPath();
+			rectLines(rect.min, rect.max);
+			ctx.strokeStyle = '#000';
+			ctx.stroke();
+
+			// - - - - - - - - - -
+
+			ctx.beginPath();
+			rectLines(rect2.min, rect2.max);
+			if (collide.rectangleRectangle(rect, rect2)) {
+				ctx.strokeStyle = '#fff';
+			} else {
+				ctx.strokeStyle = '#555';
+			}
+			ctx.stroke();
+
+			// - - - - - - - - - -
+
+			ctx.beginPath();
+			arrowLines(ray2.start, ray2.end);
+			var col = collide.rayRectangle(ray2, rect);
+			if (col) {
+				ctx.strokeStyle = '#fff';
+				ctx.stroke();
+
+				//show the intersection point:
+				ctx.beginPath();
+				var at = {
+					x:col.t * (ray2.end.x - ray2.start.x) + ray2.start.x,
+					y:col.t * (ray2.end.y - ray2.start.y) + ray2.start.y
+				};
+				ctx.moveTo(at.x - 4.0, at.y - 4.0);
+				ctx.lineTo(at.x + 4.0, at.y + 4.0);
+				ctx.moveTo(at.x - 4.0, at.y + 4.0);
+				ctx.lineTo(at.x + 4.0, at.y - 4.0);
+				ctx.strokeStyle = '#f00';
+				ctx.stroke();
+			} else {
+				ctx.strokeStyle = '#555';
+				ctx.stroke();
+			}
+			break;
+		case 2:
+
+			var convex = [
+				{x:-0.08, y:-0.07},
+				{x: 0.07, y:-0.06},
+				{x: 0.09, y: 0.08},
+				{x:-0.07, y: 0.09},
+			];
+			convex.forEach(function(c){
+				c.x = (c.x * ctx.factor + mouse.x);
+				c.y = (c.y * ctx.factor + mouse.y);
+			});
+
+			ctx.beginPath();
+			convexLines(convex);
+			ctx.strokeStyle = '#000';
+			ctx.stroke();
+
+			// - - - - - - - - - -
+
+			ctx.beginPath();
+			convexLines(convex2);
+			if (collide.convexConvex(convex, convex2)) {
+				ctx.strokeStyle = '#fff';
+			} else {
+				ctx.strokeStyle = '#555';
+			}
+			ctx.stroke();
+
+			// - - - - - - - - - -
+
+			ctx.beginPath();
+			arrowLines(ray2.start, ray2.end);
+			var col = collide.rayConvex(ray2, convex);
+			if (col) {
+				ctx.strokeStyle = '#fff';
+				ctx.stroke();
+
+				//show the intersection point:
+				ctx.beginPath();
+				var at = {
+					x:col.t * (ray2.end.x - ray2.start.x) + ray2.start.x,
+					y:col.t * (ray2.end.y - ray2.start.y) + ray2.start.y
+				};
+				ctx.moveTo(at.x - 4.0, at.y - 4.0);
+				ctx.lineTo(at.x + 4.0, at.y + 4.0);
+				ctx.moveTo(at.x - 4.0, at.y + 4.0);
+				ctx.lineTo(at.x + 4.0, at.y - 4.0);
+				ctx.strokeStyle = '#f00';
+				ctx.stroke();
+			} else {
+				ctx.strokeStyle = '#555';
+				ctx.stroke();
+			}
+			break;
 	}
 }
 
@@ -257,6 +278,9 @@ function update(elapsed) {
 function key(code, down) {
 	if (down && code == 32) { //space bar
 		mode = (mode + 1) % 3;
+	}
+	if(down && code == 66) { // B
+		doBenchmark = !doBenchmark;
 	}
 }
 
